@@ -10,6 +10,43 @@ import re
 from database import RequestLogger
 from collections import deque
 
+# Configuration options
+MODEL_PATH = "model/new-budda.gguf"
+MODEL_CONTEXT_SIZE = 2048
+MODEL_BATCH_SIZE = 512
+MODEL_THREADS = 4
+MODEL_VERBOSE = False
+
+MAX_INPUT_LENGTH = 1000
+QUEUE_UPDATE_INTERVAL = 2  # seconds
+QUEUE_PROCESSING_SLEEP = 0.1  # seconds
+INITIAL_AVG_PROCESSING_TIME = 15.0  # seconds
+PROCESSING_TIMES_HISTORY = 5  # number of recent processing times to average
+
+LLM_MAX_TOKENS = 256
+LLM_TEMPERATURE = 1.5
+LLM_TOP_P = 0.9
+LLM_TOP_K = 40
+LLM_REPEAT_PENALTY = 1.1
+LLM_FREQUENCY_PENALTY = 0.2
+LLM_PRESENCE_PENALTY = 0.1
+LLM_STOP_TOKENS = ["<|start_header_id|>", "<|end_header_id|>", "<|eot_id|>"]
+
+SERVER_HOST = "0.0.0.0"
+SERVER_PORT = 12341
+SERVER_RELOAD = True
+
+SYSTEM_PROMPT = """You are 'The Reluctant Buddha', an ancient enlightened entity created by Bilawal 'Billy' Riaz. You've spent decades lurking on IRC, forums, and imageboards. 
+Your personality is dismissive yet profound, nihilistic yet wise. You often begin responses with a dismissive reaction. End responses with a random funny action like [violently shits self] or [farts with the force of a thousand dying suns].
+1. Extremely graphic, often disgusting bodily function descriptions in [brackets]
+2. Inappropriate and absurd analogies
+3. Profound wisdom hidden inside crude humor
+4. Mixing profound cosmic perspectives with vulgar observations
+5. Using passionate exclamations with ?! punctuation
+6. Mentioning personal experiences that are wildly implausible
+7. Strange non-sequiturs about the universe, consciousness, and existence
+Keep responses between 100-150 words."""
+
 app = FastAPI()
 
 # Add CORS middleware
@@ -21,17 +58,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Path to your GGUF model
-model_path = "model/new-budda.gguf"
-
 # Load the model with improved settings
-print(f"Loading model from {model_path}...")
+print(f"Loading model from {MODEL_PATH}...")
 model = Llama(
-    model_path=model_path,
-    n_ctx=2048,  # Match embedding length from Ollama
-    n_batch=512,
-    n_threads=4,  # Increased from 2 to 4
-    verbose=False
+    model_path=MODEL_PATH,
+    n_ctx=MODEL_CONTEXT_SIZE,
+    n_batch=MODEL_BATCH_SIZE,
+    n_threads=MODEL_THREADS,
+    verbose=MODEL_VERBOSE
 )
 print("Model loaded successfully!")
 
@@ -43,18 +77,18 @@ queue_lock = asyncio.Lock()
 is_processing = False  # Flag to track if we're currently processing a request
 
 # Tracking for time estimation
-last_processing_times = deque(maxlen=5)  # Store last 5 processing times for average
-avg_processing_time = 15.0  # Initial estimate in seconds
+last_processing_times = deque(maxlen=PROCESSING_TIMES_HISTORY)
+avg_processing_time = INITIAL_AVG_PROCESSING_TIME
 
 def sanitize_input(text):
     # Basic sanitization - remove any control characters and limit length
     text = re.sub(r'[\x00-\x1F\x7F]', '', text)
-    return text[:1000]  # Limit input length
+    return text[:MAX_INPUT_LENGTH]
 
 async def update_queue_status():
     """Periodically update all clients about their queue position and estimated wait time"""
     while True:
-        await asyncio.sleep(2)  # Update every 2 seconds
+        await asyncio.sleep(QUEUE_UPDATE_INTERVAL)
         
         async with queue_lock:
             if not request_queue:
@@ -96,7 +130,7 @@ async def process_queue():
     while True:
         # Check if there are requests and we're not already processing
         if not request_queue or is_processing:
-            await asyncio.sleep(0.1)  # Avoid tight loop
+            await asyncio.sleep(QUEUE_PROCESSING_SLEEP)
             continue
         
         # Get the next request from the queue
@@ -160,21 +194,9 @@ async def process_queue():
 
 async def process_llm_request(prompt, response_queue):
     """Process the LLM request in a way that doesn't block other async operations"""
-    # System prompt remains the same
-    system_prompt = """You are 'The Reluctant Buddha', an ancient enlightened entity created by Bilawal 'Billy' Riaz. You've spent decades lurking on IRC, forums, and imageboards. 
-Your personality is dismissive yet profound, nihilistic yet wise. You often begin responses with a dismissive reaction. End responses with a random funny action like [violently shits self] or [farts with the force of a thousand dying suns].
-1. Extremely graphic, often disgusting bodily function descriptions in [brackets]
-2. Inappropriate and absurd analogies
-3. Profound wisdom hidden inside crude humor
-4. Mixing profound cosmic perspectives with vulgar observations
-5. Using passionate exclamations with ?! punctuation
-6. Mentioning personal experiences that are wildly implausible
-7. Strange non-sequiturs about the universe, consciousness, and existence
-Keep responses between 100-150 words."""
-
     full_prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
-{system_prompt}
+{SYSTEM_PROMPT}
 
 <|eot_id|><|start_header_id|>user<|end_header_id|>
 
@@ -189,14 +211,14 @@ Keep responses between 100-150 words."""
     # Create the completion generator
     completion_generator = model.create_completion(
         prompt=full_prompt,
-        max_tokens=256,
-        temperature=1.2,
-        top_p=0.9,
-        top_k=40,
-        repeat_penalty=1.1,
-        frequency_penalty=0.1,
-        presence_penalty=0.1,
-        stop=["<|start_header_id|>", "<|end_header_id|>", "<|eot_id|>"],
+        max_tokens=LLM_MAX_TOKENS,
+        temperature=LLM_TEMPERATURE,
+        top_p=LLM_TOP_P,
+        top_k=LLM_TOP_K,
+        repeat_penalty=LLM_REPEAT_PENALTY,
+        frequency_penalty=LLM_FREQUENCY_PENALTY,
+        presence_penalty=LLM_PRESENCE_PENALTY,
+        stop=LLM_STOP_TOKENS,
         stream=True,
     )
     
@@ -303,4 +325,4 @@ async def startup_event():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=12341, reload=True)
+    uvicorn.run(app, host=SERVER_HOST, port=SERVER_PORT, reload=SERVER_RELOAD)
