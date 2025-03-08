@@ -9,7 +9,7 @@ print(f"Loading model from {model_path}...")
 model = Llama(
     model_path=model_path,
     n_ctx=2048,
-    n_batch=512,
+    n_batch=256,
     n_threads=4,
     verbose=False
 )
@@ -39,7 +39,7 @@ def chat(prompt):
     response_text = ""
     for token in model.create_completion(
         prompt=full_prompt,
-        max_tokens=512,
+        max_tokens=256,
         temperature=1.5,
         top_p=0.95,
         frequency_penalty=0.2,

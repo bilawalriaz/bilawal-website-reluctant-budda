@@ -3,3 +3,5 @@ packages/
 __pycache__
 *.gguf
 model/
+tokenizer/
+requests.db

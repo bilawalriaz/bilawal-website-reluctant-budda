@@ -2,3 +2,4 @@ transformers
 protobuf
 torch
 gguf
+sqlite3
