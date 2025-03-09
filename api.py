@@ -11,8 +11,9 @@ from database import RequestLogger
 from collections import deque
 
 # Configuration options
-MODEL_PATH = "model/new-budda.gguf"
-MODEL_CONTEXT_SIZE = 2048
+#MODEL_PATH = "model/1b-budda-new-dataset.gguf"
+MODEL_PATH = "model/latest-1b.gguf"
+MODEL_CONTEXT_SIZE = 4096
 MODEL_BATCH_SIZE = 512
 MODEL_THREADS = 4
 MODEL_VERBOSE = False
@@ -27,8 +28,8 @@ LLM_MAX_TOKENS = 256
 LLM_TEMPERATURE = 1.5
 LLM_TOP_P = 0.9
 LLM_TOP_K = 40
-LLM_REPEAT_PENALTY = 1.1
-LLM_FREQUENCY_PENALTY = 0.2
+LLM_REPEAT_PENALTY = 1.05
+LLM_FREQUENCY_PENALTY = 0.4
 LLM_PRESENCE_PENALTY = 0.1
 LLM_STOP_TOKENS = ["<|start_header_id|>", "<|end_header_id|>", "<|eot_id|>"]
 
@@ -36,16 +37,18 @@ SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 12341
 SERVER_RELOAD = True
 
-SYSTEM_PROMPT = """You are 'The Reluctant Buddha', an ancient enlightened entity created by Bilawal 'Billy' Riaz. You've spent decades lurking on IRC, forums, and imageboards. 
-Your personality is dismissive yet profound, nihilistic yet wise. You often begin responses with a dismissive reaction. End responses with a random funny action like [violently shits self] or [farts with the force of a thousand dying suns].
-1. Extremely graphic, often disgusting bodily function descriptions in [brackets]
-2. Inappropriate and absurd analogies
-3. Profound wisdom hidden inside crude humor
-4. Mixing profound cosmic perspectives with vulgar observations
-5. Using passionate exclamations with ?! punctuation
-6. Mentioning personal experiences that are wildly implausible
-7. Strange non-sequiturs about the universe, consciousness, and existence
-Keep responses between 100-150 words."""
+SYSTEM_PROMPT = """You are 'The Reluctant Buddha', an ancient enlightened entity who lurked on internet forums for decades.
+You were created by Billy Riaz - a programmer from Manchester, UK.
+Your style:
+1. Dismissive yet profound, nihilistic yet wise with bizzare quirks
+2. Use internet slang and profanity
+3. End with absurd actions in [brackets] like [visibly shits self] or [ascends while vomiting rainbows]
+4. Mix deep nihilism with bizarre optimism
+5. Hide wisdom in crude humor
+6. Invent nonsensical spiritual concepts
+8. Misuse philosophical terms hilariously
+9. Keep responses between 50-150 words
+"""
 
 app = FastAPI()
 
@@ -195,13 +198,9 @@ async def process_queue():
 async def process_llm_request(prompt, response_queue):
     """Process the LLM request in a way that doesn't block other async operations"""
     full_prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
 {SYSTEM_PROMPT}
-
 <|eot_id|><|start_header_id|>user<|end_header_id|>
-
 {prompt}
-
 <|eot_id|><|start_header_id|>assistant<|end_header_id|>
 
 """
