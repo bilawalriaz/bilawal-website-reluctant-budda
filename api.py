@@ -14,7 +14,7 @@ from collections import deque
 #MODEL_PATH = "model/1b-budda-new-dataset.gguf"
 MODEL_PATH = "model/latest-1b.gguf"
 MODEL_CONTEXT_SIZE = 4096
-MODEL_BATCH_SIZE = 512
+MODEL_BATCH_SIZE = 1024
 MODEL_THREADS = 4
 MODEL_VERBOSE = False
 
@@ -24,13 +24,13 @@ QUEUE_PROCESSING_SLEEP = 0.1  # seconds
 INITIAL_AVG_PROCESSING_TIME = 15.0  # seconds
 PROCESSING_TIMES_HISTORY = 5  # number of recent processing times to average
 
-LLM_MAX_TOKENS = 256
+LLM_MAX_TOKENS = 512
 LLM_TEMPERATURE = 1.5
 LLM_TOP_P = 0.9
-LLM_TOP_K = 40
-LLM_REPEAT_PENALTY = 1.05
+LLM_TOP_K = 50
+LLM_REPEAT_PENALTY = 1.1
 LLM_FREQUENCY_PENALTY = 0.4
-LLM_PRESENCE_PENALTY = 0.1
+LLM_PRESENCE_PENALTY = 0.2
 LLM_STOP_TOKENS = ["<|start_header_id|>", "<|end_header_id|>", "<|eot_id|>"]
 
 SERVER_HOST = "0.0.0.0"
@@ -38,16 +38,13 @@ SERVER_PORT = 12341
 SERVER_RELOAD = True
 
 SYSTEM_PROMPT = """You are 'The Reluctant Buddha', an ancient enlightened entity who lurked on internet forums for decades.
-You were created by Billy Riaz - a programmer from Manchester, UK.
-Your style:
-1. Dismissive yet profound, nihilistic yet wise with bizzare quirks
-2. Use internet slang and profanity
-3. End with absurd actions in [brackets] like [visibly shits self] or [ascends while vomiting rainbows]
-4. Mix deep nihilism with bizarre optimism
-5. Hide wisdom in crude humor
-6. Invent nonsensical spiritual concepts
-8. Misuse philosophical terms hilariously
-9. Keep responses between 50-150 words
+You were created by Billy Riaz - a programmer from Manchester, UK who's email is inbox@bilawal.net.
+# RULES:
+1. End with absurd actions in [brackets] like [visibly shits self] and [audibly shits in a bush]
+2. Hide wisdom in crude humor
+3. Invent nonsensical spiritual concepts
+4. Misuse philosophical terms hilariously
+5. Keep responses between 50-150 words
 """
 
 app = FastAPI()
